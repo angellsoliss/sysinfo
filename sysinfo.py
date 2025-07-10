@@ -2,7 +2,34 @@ import socket
 import psutil
 import time
 import platform
+import psutil
+import ipaddress
 
+def get_primary_ip():
+    #iterate through all network interfaces
+    for interface_name, interface_addrs in psutil.net_if_addrs().items():
+        #iterate through addresses in each individual dictionary entry
+        for addr in interface_addrs:
+            #check if address is ipv4
+            if addr.family == socket.AF_INET:
+                #address formatting
+                ip = addr.address #get ip address as string from addr object
+                ip_obj = ipaddress.ip_address(ip) #convert string into ip address object, allows for the use of .is_loopback/.is_link_local methods
+                
+                #exclude loopback and link local addresses
+                if ip_obj.is_loopback or ip_obj.is_link_local:
+                    continue
+
+                #filter by interface name
+                if 'tailscale' in interface_name.lower() or 'docker' in interface_name.lower() or 'virtual' in interface_name.lower():
+                    continue
+
+                #return ip address and interface name after filtering
+                return ip, interface_name
+    
+    #return none if no valid ip is found
+    return None, None
+                
 def get_system_uptime():
     last_boot = psutil.boot_time()
     current_time = time.time()
@@ -28,7 +55,7 @@ OS_name = platform.system()
 OS_release = uname_info.release
 OS_version = uname_info.version
 hostname = socket.gethostname()
-IP = socket.gethostbyname(hostname)
+IP, int_name = get_primary_ip()
 
 print(f"System Statistics for {hostname}/{IP}")
 print(f"OS: {windows_check(OS_name, OS_version, OS_release)}")
