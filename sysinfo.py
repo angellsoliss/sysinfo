@@ -60,6 +60,8 @@ disk_stats = list(psutil.disk_usage(primary_drive_letter))
 disk_usage = round((100 - disk_stats[3]), 2)
 min_percent_disk_space = 10
 cpu_usage = psutil.cpu_percent()
+RAM_stats = list(psutil.virtual_memory())
+RAM_usage = RAM_stats[2]
 
 table = Table(title=f"System Statistics for {hostname}/{IP}", header_style="green")
 
@@ -77,6 +79,10 @@ if cpu_usage >= 80:
     table.add_row("CPU Usage", f"{cpu_usage}% [bold red]CRITICALLY HIGH!!![/bold red]")
 else:
     table.add_row("CPU Usage", f"{cpu_usage}%")
+if RAM_usage >= 80:
+    table.add_row("RAM Usage", f"{RAM_usage}% [bold red]CRITICALLY HIGH!!![/bold red]")
+else:
+    table.add_row("RAM Usage", f"{RAM_usage}%")
 
 console = Console()
 console.print(table)
