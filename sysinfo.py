@@ -5,6 +5,7 @@ import platform
 import psutil
 import ipaddress
 import pathlib
+from rich.console import Console
 
 def get_primary_ip():
     #iterate through all network interfaces
@@ -27,8 +28,6 @@ def get_primary_ip():
 
                 #return ip address and interface name after filtering
                 return ip, interface_name
-    
-    #return none if no valid ip is found
     return None, None
                 
 def get_system_uptime() -> str:
@@ -65,12 +64,17 @@ primary_drive_letter = get_primary_drive_letter()
 disk_stats = list(psutil.disk_usage(primary_drive_letter))
 disk_usage = round((100 - disk_stats[3]), 2)
 min_percent_disk_space = 10
+cpu_usage = psutil.cpu_percent()
 
-print(f"System Statistics for {hostname}/{IP}")
+console = Console()
+console.print(f"[cyan1]System Statistics for {hostname}/{IP}[cyan1]")
+print("------------------------------------------")
 print(f"OS: {windows_check(OS_name, OS_version, OS_release)}")
 print(f"OS Version: {OS_version}")
 if disk_usage < min_percent_disk_space:
-    print(f"ONLY {disk_usage}% SPACE REMAINING ON {primary_drive_letter}, PRIORITIZE DISK CLEANUP")
+    console.print(f"[bold red]ALERT![/bold red] ONLY {disk_usage}% SPACE REMAINING ON {primary_drive_letter}, PRIORITIZE DISK CLEANUP")
 else:
     print(f"% Disk Space Remaining on {primary_drive_letter} = {disk_usage}%")
 print(get_system_uptime())
+print(f"CPU Usage: {cpu_usage}%")
+print("------------------------------------------")
