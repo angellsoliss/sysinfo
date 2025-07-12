@@ -4,6 +4,7 @@ import time
 import platform
 import psutil
 import ipaddress
+import pathlib
 
 def get_primary_ip():
     #iterate through all network interfaces
@@ -30,7 +31,7 @@ def get_primary_ip():
     #return none if no valid ip is found
     return None, None
                 
-def get_system_uptime():
+def get_system_uptime() -> str:
     last_boot = psutil.boot_time()
     current_time = time.time()
 
@@ -42,13 +43,17 @@ def get_system_uptime():
     return f"System Uptime: {int(uptime_days)}:{int(uptime_hours)%24}:{int(uptime_minutes)%60}:{int(uptime_seconds)%60}"
 
 #determines if system is using windows 10 or 11 bc the version numbering convention is weird
-def windows_check(name, version, release):
+def windows_check(name, version, release) -> str:
     if name == "Windows" and release == "10":
         build_number = int(version.split(".")[-1])
         if build_number >= 22000:
             return "Windows 11"
         else:
             return "Windows 10" 
+        
+def get_primary_drive_letter() -> str:
+    drive_letter = pathlib.Path.home().drive
+    return drive_letter
 
 uname_info = platform.uname()
 OS_name = platform.system()
@@ -56,8 +61,16 @@ OS_release = uname_info.release
 OS_version = uname_info.version
 hostname = socket.gethostname()
 IP, int_name = get_primary_ip()
+primary_drive_letter = get_primary_drive_letter()
+disk_stats = list(psutil.disk_usage(primary_drive_letter))
+disk_usage = round((100 - disk_stats[3]), 2)
+min_percent_disk_space = 10
 
 print(f"System Statistics for {hostname}/{IP}")
 print(f"OS: {windows_check(OS_name, OS_version, OS_release)}")
 print(f"OS Version: {OS_version}")
+if disk_usage < min_percent_disk_space:
+    print(f"ONLY {disk_usage}% SPACE REMAINING ON {primary_drive_letter}, PRIORITIZE DISK CLEANUP")
+else:
+    print(f"% Disk Space Remaining on {primary_drive_letter} = {disk_usage}%")
 print(get_system_uptime())
