@@ -6,6 +6,7 @@ import psutil
 import ipaddress
 import pathlib
 from rich.console import Console
+from rich.table import Table
 
 def get_primary_ip():
     #iterate through all network interfaces
@@ -39,7 +40,7 @@ def get_system_uptime() -> str:
     uptime_hours = uptime_minutes // 60
     uptime_days = uptime_hours // 24
 
-    return f"System Uptime: {int(uptime_days)}:{int(uptime_hours)%24}:{int(uptime_minutes)%60}:{int(uptime_seconds)%60}"
+    return f"{int(uptime_days)}:{int(uptime_hours)%24}:{int(uptime_minutes)%60}:{int(uptime_seconds)%60}"
 
 #determines if system is using windows 10 or 11 bc the version numbering convention is weird
 def windows_check(name, version, release) -> str:
@@ -66,7 +67,27 @@ disk_usage = round((100 - disk_stats[3]), 2)
 min_percent_disk_space = 10
 cpu_usage = psutil.cpu_percent()
 
+table = Table(title=f"System Statistics for {hostname}/{IP}", header_style="green")
+
+table.add_column("Metric", justify="left", style="cyan", no_wrap=True)
+table.add_column("Information", justify="left", no_wrap=True)
+
+table.add_row("OS ", f"{windows_check(OS_name, OS_version, OS_release)}")
+table.add_row("OS Version", f"{OS_version}")
+if disk_usage < min_percent_disk_space:
+    table.add_row(f"Disk Space ({primary_drive_letter}) ", f"{disk_usage}% [bold red]CRITICALLY LOW!!![/bold red]")
+else:
+    table.add_row(f"Disk Space ({primary_drive_letter})", f"{disk_usage}%")
+table.add_row("Uptime", f"{get_system_uptime()}")
+if cpu_usage >= 80:
+    table.add_row("CPU Usage", f"{cpu_usage}% [bold red]CRITICALLY HIGH!!![/bold red]")
+else:
+    table.add_row("CPU Usage", f"{cpu_usage}%")
+
 console = Console()
+console.print(table)
+
+'''
 console.print(f"[cyan1]System Statistics for {hostname}/{IP}[cyan1]")
 print("------------------------------------------")
 print(f"OS: {windows_check(OS_name, OS_version, OS_release)}")
@@ -78,3 +99,4 @@ else:
 print(get_system_uptime())
 print(f"CPU Usage: {cpu_usage}%")
 print("------------------------------------------")
+'''
