@@ -9,25 +9,19 @@ from rich.console import Console
 from rich.table import Table
 
 def get_primary_ip():
-    #iterate through all network interfaces
     for interface_name, interface_addrs in psutil.net_if_addrs().items():
         #iterate through addresses in each individual dictionary entry
         for addr in interface_addrs:
             #check if address is ipv4
             if addr.family == socket.AF_INET:
-                #address formatting
                 ip = addr.address #get ip address as string from addr object
                 ip_obj = ipaddress.ip_address(ip) #convert string into ip address object, allows for the use of .is_loopback/.is_link_local methods
                 
-                #exclude loopback and link local addresses
                 if ip_obj.is_loopback or ip_obj.is_link_local:
                     continue
-
-                #filter by interface name
                 if 'tailscale' in interface_name.lower() or 'docker' in interface_name.lower() or 'virtual' in interface_name.lower():
                     continue
 
-                #return ip address and interface name after filtering
                 return ip, interface_name
     return None, None
                 
