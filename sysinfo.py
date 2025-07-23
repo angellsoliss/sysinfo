@@ -4,11 +4,10 @@ import time
 import platform
 import psutil
 import ipaddress
-import pathlib
 from rich.console import Console
 from rich.table import Table
 
-def get_primary_ip():
+def get_primary_ip() -> str | None:
     for interface_name, interface_addrs in psutil.net_if_addrs().items():
         #iterate through addresses in each individual dictionary entry
         for addr in interface_addrs:
@@ -44,10 +43,6 @@ def windows_check(name, version, release) -> str:
             return "Windows 11"
         else:
             return "Windows 10" 
-        
-def get_primary_drive_letter() -> str:
-    drive_letter = pathlib.Path.home().drive
-    return drive_letter
 
 uname_info = platform.uname()
 OS_name = platform.system()
@@ -55,13 +50,11 @@ OS_release = uname_info.release
 OS_version = uname_info.version
 hostname = socket.gethostname()
 IP, int_name = get_primary_ip()
-primary_drive_letter = get_primary_drive_letter()
-disk_stats = list(psutil.disk_usage(primary_drive_letter))
-disk_usage = round((100 - disk_stats[3]), 2)
 min_percent_disk_space = 10
 cpu_usage = psutil.cpu_percent()
 RAM_stats = list(psutil.virtual_memory())
 RAM_usage = RAM_stats[2]
+partitions = psutil.disk_partitions()
 
 table = Table(title=f"System Statistics for {hostname}/{IP}", header_style="green")
 
@@ -70,10 +63,13 @@ table.add_column("Information", justify="left", no_wrap=True)
 
 table.add_row("OS ", f"{windows_check(OS_name, OS_version, OS_release)}")
 table.add_row("OS Version", f"{OS_version}")
-if disk_usage < min_percent_disk_space:
-    table.add_row(f"Disk Space ({primary_drive_letter}) ", f"{disk_usage}% [bold red]CRITICALLY LOW!!![/bold red]")
-else:
-    table.add_row(f"Disk Space ({primary_drive_letter})", f"{disk_usage}%")
+for p in partitions:
+    drive_letter = p.mountpoint
+    space_remaining = round(100 - psutil.disk_usage(drive_letter)[3], 2)
+    if space_remaining < min_percent_disk_space:
+        table.add_row(f"Drive Space Remaining ({drive_letter[0]}):", f"{space_remaining}% [bold red]CRITICALLY LOW!!![/bold red]")
+    else:
+        table.add_row(f"Drive Space Remaining ({drive_letter[0]}): ", f"{space_remaining}%")
 table.add_row("Uptime", f"{get_system_uptime()}")
 if cpu_usage >= 80:
     table.add_row("CPU Usage", f"{cpu_usage}% [bold red]CRITICALLY HIGH!!![/bold red]")
@@ -86,17 +82,3 @@ else:
 
 console = Console()
 console.print(table)
-
-'''
-console.print(f"[cyan1]System Statistics for {hostname}/{IP}[cyan1]")
-print("------------------------------------------")
-print(f"OS: {windows_check(OS_name, OS_version, OS_release)}")
-print(f"OS Version: {OS_version}")
-if disk_usage < min_percent_disk_space:
-    console.print(f"[bold red]ALERT![/bold red] ONLY {disk_usage}% SPACE REMAINING ON {primary_drive_letter}, PRIORITIZE DISK CLEANUP")
-else:
-    print(f"% Disk Space Remaining on {primary_drive_letter} = {disk_usage}%")
-print(get_system_uptime())
-print(f"CPU Usage: {cpu_usage}%")
-print("------------------------------------------")
-'''
