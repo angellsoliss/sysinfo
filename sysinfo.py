@@ -4,6 +4,8 @@ import time
 import platform
 import psutil
 import ipaddress
+import wmi
+import cpuinfo
 from rich.console import Console
 from rich.table import Table
 
@@ -44,6 +46,17 @@ def windows_check(name, version, release) -> str:
         else:
             return "Windows 10" 
 
+def get_gpus() -> str | list :
+    w = wmi.WMI()
+    gpus_list = []
+    for gpu in w.Win32_VideoController():
+        gpus_list.append(gpu.Name)
+    
+    if len(gpus_list) >= 1:
+        return gpus_list
+    else:
+        return "No GPU detected"
+    
 uname_info = platform.uname()
 OS_name = platform.system()
 OS_release = uname_info.release
@@ -55,26 +68,35 @@ cpu_usage = psutil.cpu_percent()
 RAM_stats = list(psutil.virtual_memory())
 RAM_usage = RAM_stats[2]
 partitions = psutil.disk_partitions()
+gpus = get_gpus()
 
 table = Table(title=f"System Statistics for {hostname}/{IP}", header_style="green")
 
-table.add_column("Metric", justify="left", style="cyan", no_wrap=True)
+table.add_column("Metric", justify="right", style="cyan", no_wrap=True)
 table.add_column("Information", justify="left", no_wrap=True)
 
 table.add_row("OS ", f"{windows_check(OS_name, OS_version, OS_release)}")
 table.add_row("OS Version", f"{OS_version}")
+
 for p in partitions:
     drive_letter = p.mountpoint
     space_remaining = round(100 - psutil.disk_usage(drive_letter)[3], 2)
     if space_remaining < min_percent_disk_space:
-        table.add_row(f"Drive Space Remaining ({drive_letter[0]}):", f"{space_remaining}% [bold red]CRITICALLY LOW!!![/bold red]")
+        table.add_row(f"Drive Space Remaining ({drive_letter[0]})", f"{space_remaining}% [bold red]CRITICALLY LOW!!![/bold red]")
     else:
-        table.add_row(f"Drive Space Remaining ({drive_letter[0]}): ", f"{space_remaining}%")
+        table.add_row(f"Drive Space Remaining ({drive_letter[0]}) ", f"{space_remaining}%")
+
 table.add_row("Uptime", f"{get_system_uptime()}")
+
+table.add_row("CPU", f"{cpuinfo.get_cpu_info()['brand_raw']}")
+
+table.add_row("GPU(s)", f"{gpus}")
+
 if cpu_usage >= 80:
     table.add_row("CPU Usage", f"{cpu_usage}% [bold red]CRITICALLY HIGH!!![/bold red]")
 else:
     table.add_row("CPU Usage", f"{cpu_usage}%")
+
 if RAM_usage >= 80:
     table.add_row("RAM Usage", f"{RAM_usage}% [bold red]CRITICALLY HIGH!!![/bold red]")
 else:
