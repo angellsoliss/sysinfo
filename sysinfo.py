@@ -90,7 +90,7 @@ table.add_row("Uptime", f"{get_system_uptime()}")
 
 table.add_row("CPU", f"{cpuinfo.get_cpu_info()['brand_raw']}")
 
-table.add_row("Platform", f"{platform.machine()}")
+table.add_row("Architecture", f"{platform.machine()}")
 
 table.add_row("GPU(s)", f"{gpus}")
 
